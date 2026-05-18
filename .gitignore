@@ -2,6 +2,7 @@
 bin/
 obj/
 publish/
+publish v1/
 
 # User data (cookies, history)
 OriginUserData/
