@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Origin Terminal</title>
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    #root {
+      display: grid;
+      grid-template-rows: 34px 1fr;
+      width: 100%;
+      height: 100%;
+      background: #1e1e1e;
+    }
+
+    #tabbar {
+      display: flex;
+      align-items: stretch;
+      min-width: 0;
+      border-bottom: 1px solid #2a2a2a;
+      background: #252526;
+      user-select: none;
+    }
+
+    #tabs {
+      display: flex;
+      flex: 1;
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 120px;
+      max-width: 220px;
+      height: 34px;
+      padding: 0 8px 0 11px;
+      box-sizing: border-box;
+      border-right: 1px solid #333;
+      background: #2d2d2d;
+      color: #cfcfcf;
+      cursor: default;
+      font-size: 12px;
+    }
+
+    .tab.active {
+      background: #1e1e1e;
+      color: #ffffff;
+    }
+
+    .tab-title {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .tab-close,
+    #new-tab,
+    #new-tab-menu button {
+      border: 0;
+      color: inherit;
+      background: transparent;
+      font: inherit;
+    }
+
+    .tab-close {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      line-height: 16px;
+      padding: 0;
+      color: #a9a9a9;
+    }
+
+    .tab-close:hover,
+    #new-tab:hover {
+      background: #3a3a3a;
+      color: #fff;
+    }
+
+    #new-tab {
+      width: 38px;
+      height: 34px;
+      font-size: 20px;
+      cursor: default;
+    }
+
+    #new-tab-menu {
+      position: fixed;
+      display: none;
+      min-width: 150px;
+      z-index: 10;
+      padding: 5px;
+      border: 1px solid #3d3d3d;
+      background: #252526;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+    }
+
+    #new-tab-menu.open {
+      display: block;
+    }
+
+    #new-tab-menu button {
+      display: block;
+      width: 100%;
+      padding: 7px 9px;
+      text-align: left;
+      color: #d4d4d4;
+    }
+
+    #new-tab-menu button:hover {
+      background: #094771;
+      color: #fff;
+    }
+
+    #terminal-host {
+      position: relative;
+      min-height: 0;
+      background: #1e1e1e;
+    }
+
+    .terminal-pane {
+      position: absolute;
+      inset: 0;
+      display: none;
+      overflow: hidden;
+      background: #1e1e1e;
+    }
+
+    .terminal-pane.active {
+      display: block;
+    }
+
+    .xterm {
+      height: 100%;
+      padding: 6px 8px;
+      box-sizing: border-box;
+    }
+
+    .xterm-viewport {
+      background: #1e1e1e !important;
+    }
+
+    #searchbar {
+      position: fixed;
+      top: 42px;
+      right: 12px;
+      z-index: 20;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 5px;
+      border: 1px solid #3d3d3d;
+      background: #252526;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+    }
+
+    #searchbar.open {
+      display: flex;
+    }
+
+    #search-input {
+      width: 220px;
+      height: 24px;
+      box-sizing: border-box;
+      border: 1px solid #3d3d3d;
+      outline: none;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font: 12px Consolas, monospace;
+      padding: 2px 6px;
+    }
+
+    #searchbar button {
+      width: 26px;
+      height: 24px;
+      border: 0;
+      background: transparent;
+      color: #d4d4d4;
+    }
+
+    #searchbar button:hover {
+      background: #3a3a3a;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div id="tabbar">
+      <div id="tabs"></div>
+      <button id="new-tab" title="New terminal">+</button>
+    </div>
+    <div id="terminal-host"></div>
+  </div>
+  <div id="new-tab-menu">
+    <button data-shell="powershell">PowerShell</button>
+    <button data-shell="cmd">Command Prompt</button>
+    <button data-shell="wsl">WSL</button>
+    <button data-shell="gitbash">Git Bash</button>
+  </div>
+  <div id="searchbar">
+    <input id="search-input" type="text" spellcheck="false" placeholder="Search terminal">
+    <button id="search-prev" title="Previous match">↑</button>
+    <button id="search-next" title="Next match">↓</button>
+    <button id="search-close" title="Close search">×</button>
+  </div>
+
+  <script>
+    function loadStyle(href) {
+      return new Promise((resolve, reject) => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.onload = resolve;
+        link.onerror = reject;
+        document.head.appendChild(link);
+      });
+    }
+
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.body.appendChild(script);
+      });
+    }
+
+    async function boot() {
+      await loadStyle('./vendor/xterm/xterm.css');
+      await loadScript('./vendor/xterm/xterm.js');
+      await loadScript('./vendor/xterm/xterm-addon-fit.js');
+      await loadScript('./vendor/xterm/xterm-addon-search.js');
+
+      const tabsEl = document.getElementById('tabs');
+      const hostEl = document.getElementById('terminal-host');
+      const newTabButton = document.getElementById('new-tab');
+      const menuEl = document.getElementById('new-tab-menu');
+      const searchbarEl = document.getElementById('searchbar');
+      const searchInputEl = document.getElementById('search-input');
+      const searchPrevButton = document.getElementById('search-prev');
+      const searchNextButton = document.getElementById('search-next');
+      const searchCloseButton = document.getElementById('search-close');
+      const terminals = new Map();
+      let activeTabId = null;
+      let fontSize = Number(localStorage.getItem('origin-terminal-font-size') || 14);
+
+      const theme = {
+        background: '#1e1e1e',
+        foreground: '#d4d4d4',
+        cursor: '#ffffff',
+        selectionBackground: '#264f78',
+        black: '#000000',
+        red: '#cd3131',
+        green: '#0dbc79',
+        yellow: '#e5e510',
+        blue: '#2472c8',
+        magenta: '#bc3fbc',
+        cyan: '#11a8cd',
+        white: '#e5e5e5',
+        brightBlack: '#666666',
+        brightRed: '#f14c4c',
+        brightGreen: '#23d18b',
+        brightYellow: '#f5f543',
+        brightBlue: '#3b8eea',
+        brightMagenta: '#d670d6',
+        brightCyan: '#29b8db',
+        brightWhite: '#ffffff'
+      };
+
+      function post(type, data = {}) {
+        window.chrome.webview.postMessage({ type, ...data });
+      }
+
+      function createTerminal(tabId, title, shell, active) {
+        if (terminals.has(tabId)) return;
+
+        const tab = document.createElement('div');
+        tab.className = 'tab';
+        tab.dataset.tabId = tabId;
+        tab.innerHTML = `
+          <span class="tab-title"></span>
+          <button class="tab-close" title="Close terminal">×</button>
+        `;
+        tab.querySelector('.tab-title').textContent = title || shell || 'Terminal';
+
+        const pane = document.createElement('div');
+        pane.className = 'terminal-pane';
+        pane.dataset.tabId = tabId;
+
+        const term = new Terminal({
+          cursorBlink: true,
+          convertEol: false,
+          fontFamily: 'Consolas, "Cascadia Mono", monospace',
+          fontSize: 14,
+          scrollback: 5000,
+          theme
+        });
+
+        const fitAddon = window.FitAddon ? new FitAddon.FitAddon() : null;
+        const searchAddon = window.SearchAddon ? new SearchAddon.SearchAddon() : null;
+        if (fitAddon) {
+          term.loadAddon(fitAddon);
+        }
+        if (searchAddon) {
+          term.loadAddon(searchAddon);
+        }
+
+        term.options.fontSize = fontSize;
+
+        const state = { tab, pane, term, fitAddon, searchAddon, shell, inputBuffer: '' };
+        terminals.set(tabId, state);
+
+        tab.addEventListener('click', event => {
+          if (event.target.classList.contains('tab-close')) {
+            event.stopPropagation();
+            post('closeTab', { tabId });
+            return;
+          }
+
+          post('switchTab', { tabId });
+        });
+
+        tab.addEventListener('mousedown', event => {
+          if (event.button === 1) {
+            event.preventDefault();
+            post('closeTab', { tabId });
+          }
+        });
+
+        term.onData(data => handleTerminalData(tabId, data));
+        term.attachCustomKeyEventHandler(event => handleTerminalKey(tabId, event));
+
+        tabsEl.appendChild(tab);
+        hostEl.appendChild(pane);
+        term.open(pane);
+
+        if (active) {
+          activateTerminal(tabId);
+        }
+
+        saveProfiles();
+      }
+
+      function activateTerminal(tabId) {
+        const state = terminals.get(tabId);
+        if (!state) return;
+
+        activeTabId = tabId;
+        for (const [id, item] of terminals) {
+          const active = id === tabId;
+          item.tab.classList.toggle('active', active);
+          item.pane.classList.toggle('active', active);
+        }
+
+        fit(tabId);
+        state.term.focus();
+        saveProfiles();
+      }
+
+      function closeTerminal(tabId) {
+        const state = terminals.get(tabId);
+        if (!state) return;
+
+        state.term.dispose();
+        state.tab.remove();
+        state.pane.remove();
+        terminals.delete(tabId);
+        saveProfiles();
+
+        if (activeTabId === tabId) {
+          activeTabId = null;
+          const next = terminals.keys().next();
+          if (!next.done) {
+            post('switchTab', { tabId: next.value });
+          }
+        }
+      }
+
+      function handleTerminalData(tabId, data) {
+        const state = terminals.get(tabId);
+        if (!state) return;
+
+        if (data === '\r') {
+          sendLine(tabId);
+          return;
+        }
+
+        if (data === '\u007f') {
+          backspace(state);
+          return;
+        }
+
+        if (data === '\u0003') {
+          if (state.term.hasSelection()) {
+            copySelection(state);
+          } else {
+            state.inputBuffer = '';
+            post('interrupt', { tabId });
+          }
+          return;
+        }
+
+        insertText(tabId, data);
+      }
+
+      function handleTerminalKey(tabId, event) {
+        const state = terminals.get(tabId);
+        if (!state || event.type !== 'keydown') return true;
+
+        const key = event.key.toLowerCase();
+
+        if (event.ctrlKey && event.shiftKey && key === 'n') {
+          post('createTab', { shell: 'powershell' });
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.ctrlKey && event.shiftKey && key === 'w') {
+          post('closeTab', { tabId });
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.ctrlKey && event.shiftKey && key === 'r') {
+          post('restartTab', { tabId });
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.ctrlKey && event.shiftKey && key === 'k') {
+          state.term.clear();
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.ctrlKey && event.shiftKey && key === 'f') {
+          openSearch();
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.key === 'F3') {
+          search(event.shiftKey ? 'previous' : 'next');
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.key === 'Escape' && searchbarEl.classList.contains('open')) {
+          closeSearch();
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.ctrlKey && (event.key === '+' || event.key === '=')) {
+          setFontSize(fontSize + 1);
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.ctrlKey && event.key === '-') {
+          setFontSize(fontSize - 1);
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.ctrlKey && event.key === '0') {
+          setFontSize(14);
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.ctrlKey && key === 'c' && state.term.hasSelection()) {
+          copySelection(state);
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.ctrlKey && key === 'v') {
+          pasteClipboard(tabId);
+          event.preventDefault();
+          return false;
+        }
+
+        if (event.shiftKey && event.key === 'Insert') {
+          pasteClipboard(tabId);
+          event.preventDefault();
+          return false;
+        }
+
+        return true;
+      }
+
+      function insertText(tabId, text) {
+        const state = terminals.get(tabId);
+        if (!state) return;
+
+        for (const char of text) {
+          if (char === '\r' || char === '\n') {
+            sendLine(tabId);
+          } else if (char === '\t' || char >= ' ') {
+            state.inputBuffer += char;
+          }
+        }
+      }
+
+      function sendLine(tabId) {
+        const state = terminals.get(tabId);
+        if (!state) return;
+
+        post('input', { tabId, data: state.inputBuffer + '\r\n' });
+        state.inputBuffer = '';
+      }
+
+      function backspace(state) {
+        if (state.inputBuffer.length === 0) return;
+
+        state.inputBuffer = state.inputBuffer.slice(0, -1);
+      }
+
+      async function copySelection(state) {
+        const selected = state.term.getSelection();
+        if (!selected) return;
+
+        try {
+          await navigator.clipboard.writeText(selected);
+          state.term.clearSelection();
+        } catch {
+          document.execCommand('copy');
+        }
+      }
+
+      async function pasteClipboard(tabId) {
+        try {
+          const text = await navigator.clipboard.readText();
+          insertText(tabId, text);
+        } catch {
+        }
+      }
+
+      function fit(tabId = activeTabId) {
+        const state = terminals.get(tabId);
+        if (!state) return;
+
+        if (state.fitAddon) {
+          state.fitAddon.fit();
+        }
+
+        state.term.focus();
+      }
+
+      function fitAll() {
+        for (const id of terminals.keys()) {
+          fit(id);
+        }
+      }
+
+      function openMenu() {
+        const rect = newTabButton.getBoundingClientRect();
+        menuEl.style.left = `${Math.max(0, rect.right - 150)}px`;
+        menuEl.style.top = `${rect.bottom}px`;
+        menuEl.classList.add('open');
+      }
+
+      function closeMenu() {
+        menuEl.classList.remove('open');
+      }
+
+      function setFontSize(size) {
+        fontSize = Math.max(9, Math.min(28, size));
+        localStorage.setItem('origin-terminal-font-size', String(fontSize));
+
+        for (const state of terminals.values()) {
+          state.term.options.fontSize = fontSize;
+        }
+
+        fitAll();
+      }
+
+      function openSearch() {
+        searchbarEl.classList.add('open');
+        searchInputEl.focus();
+        searchInputEl.select();
+      }
+
+      function closeSearch() {
+        searchbarEl.classList.remove('open');
+        terminals.get(activeTabId)?.term.focus();
+      }
+
+      function search(direction) {
+        const state = terminals.get(activeTabId);
+        const query = searchInputEl.value;
+        if (!state || !state.searchAddon || !query) return;
+
+        if (direction === 'previous') {
+          state.searchAddon.findPrevious(query);
+        } else {
+          state.searchAddon.findNext(query);
+        }
+      }
+
+      function saveProfiles() {
+        const profiles = [...terminals.values()].map(state => state.shell || 'powershell');
+        const activeIndex = [...terminals.keys()].indexOf(activeTabId);
+        localStorage.setItem('origin-terminal-profiles', JSON.stringify({ profiles, activeIndex }));
+      }
+
+      function getSavedProfiles() {
+        try {
+          const saved = JSON.parse(localStorage.getItem('origin-terminal-profiles') || 'null');
+          if (!saved || !Array.isArray(saved.profiles)) return { profiles: [], activeIndex: 0 };
+
+          return {
+            profiles: saved.profiles.filter(profile => typeof profile === 'string').slice(0, 8),
+            activeIndex: Number.isInteger(saved.activeIndex) ? saved.activeIndex : 0
+          };
+        } catch {
+          return { profiles: [], activeIndex: 0 };
+        }
+      }
+
+      newTabButton.addEventListener('click', event => {
+        if (event.shiftKey) {
+          openMenu();
+        } else {
+          post('createTab', { shell: 'powershell' });
+        }
+      });
+
+      newTabButton.addEventListener('contextmenu', event => {
+        event.preventDefault();
+        openMenu();
+      });
+
+      menuEl.addEventListener('click', event => {
+        const button = event.target.closest('button[data-shell]');
+        if (!button) return;
+
+        post('createTab', { shell: button.dataset.shell });
+        closeMenu();
+      });
+
+      document.addEventListener('mousedown', event => {
+        if (!menuEl.contains(event.target) && event.target !== newTabButton) {
+          closeMenu();
+        }
+      });
+
+      searchInputEl.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          search(event.shiftKey ? 'previous' : 'next');
+          event.preventDefault();
+        } else if (event.key === 'Escape') {
+          closeSearch();
+          event.preventDefault();
+        }
+      });
+
+      searchInputEl.addEventListener('input', () => search('next'));
+      searchPrevButton.addEventListener('click', () => search('previous'));
+      searchNextButton.addEventListener('click', () => search('next'));
+      searchCloseButton.addEventListener('click', closeSearch);
+
+      window.chrome.webview.addEventListener('message', event => {
+        const message = event.data || {};
+
+        switch (message.type) {
+          case 'tabCreated':
+            createTerminal(message.tabId, message.title, message.shell, message.active);
+            break;
+
+          case 'tabActivated':
+            activateTerminal(message.tabId);
+            break;
+
+          case 'tabClosed':
+            closeTerminal(message.tabId);
+            break;
+
+          case 'output':
+            terminals.get(message.tabId)?.term.write(message.data || '');
+            break;
+
+          case 'focus':
+            fit(message.tabId || activeTabId);
+            break;
+
+          case 'fit':
+            fitAll();
+            break;
+
+          case 'bridgeError':
+            if (activeTabId && terminals.has(activeTabId)) {
+              terminals.get(activeTabId).term.writeln(`\x1b[31m${message.data || ''}\x1b[0m`);
+            }
+            break;
+        }
+      });
+
+      window.addEventListener('resize', fitAll);
+
+      setTimeout(() => {
+        post('ready', getSavedProfiles());
+        fitAll();
+      }, 0);
+    }
+
+    boot().catch(error => {
+      document.body.innerHTML =
+        '<pre style="color:#f14c4c;background:#1e1e1e;margin:0;padding:12px;font:14px Consolas,monospace;white-space:pre-wrap;">Failed to load local xterm.js assets from terminal-ui/vendor/xterm/.\n\n' +
+        String(error).replace(/[<>&]/g, char => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[char])) +
+        '</pre>';
+    });
+  </script>
+</body>
+</html>

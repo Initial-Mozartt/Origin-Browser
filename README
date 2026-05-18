@@ -1,37 +1,118 @@
-OriginBrowser/
-├── OriginBrowser.csproj   # Project file
-├── Program.cs             # Entry point
-├── BrowserForm.cs         # Main form, tab manager, WebView2 host
-└── chrome-ui/
-    ├── index.html         # Browser chrome markup
-    ├── style.css          # Dark theme styles
-    └── app.js             # Chrome UI logic + C# bridge
-
 # Origin Browser
 
-A minimal, robust desktop web browser for Windows 10/11.  
-Built with **C# WinForms + Microsoft Edge WebView2**.
+A minimal, keyboard‑driven desktop web browser for Windows, built from the ground up with **C# WinForms + Microsoft Edge WebView2**.  
+Origin is fast, private, and completely yours—no telemetry, no bloat, no surveillance.
 
-## Why this stack?
-- **No Rust/Node.js toolchain** – just the .NET 8 SDK.
-- **Native WebView2** rendering (Chromium-based, preinstalled on Win11).
-- **HTML/CSS/JS chrome UI** – customize the tabs and toolbar with web tech.
-- **Small self-contained EXE** – ~35–45 MB single-file publish.
-- **Real multi-tab architecture** – each tab is an isolated WebView2 instance.
+**Start page:** [origin.mozartt.workers.dev](https://origin.mozartt.workers.dev)  
+**Repository:** [github.com/Initial-Mozartt/Origin-Browser](https://github.com/Initial-Mozartt/Origin-Browser)
+
+---
+
+## Why Origin?
+
+Most browsers are designed for everyone—meaning they’re also designed to mine your data. Origin is different. It’s a personal tool, crafted for a single user who values speed, control, and a distraction‑free workflow.
+
+- **Zero telemetry** – No Google, no Microsoft, no phoning home.
+- **Keyboard‑first** – Nearly every action has a shortcut; you never need a mouse.
+- **Built‑in terminal** – PowerShell, CMD, WSL, or Git Bash inside the browser window.
+- **Frameless & chrome‑free** – Toggle the title bar, tabs, and address bar independently to get a pure content view.
+- **Self‑contained** – A single `.exe` (and a `chrome-ui` folder) is all you need.
+- **Open source** – MIT‑licensed, free forever.
+
+---
 
 ## Features
-- Multi-tab browsing (Ctrl+T new, Ctrl+W close, middle-click to close)
-- Address bar with focus shortcut (Ctrl+L)
-- Back / Forward / Reload / Home buttons
-- Vim-style page scrolling: `j` / `k` (line), `Ctrl+d` / `Ctrl+u` (half-page), `g` / `G` (top/bottom)
-- Navigation shortcuts: Ctrl+[/] or Ctrl+Left/Right
-- Fullscreen toggle (F11)
-- Dark theme across UI and tabs
+
+### Core Browsing
+- **Multi‑tab browsing** – Isolated WebView2 environments per tab; open, close, and switch with keyboard shortcuts.
+- **Omnibox** – Type a URL or a search query; automatically sends searches to Google.
+- **Session restore** – All tabs are saved on exit and restored on launch (can be disabled).
+- **History** – Every visited URL is recorded locally; never leaves your machine.
+- **Dark theme** – CSS‑custom properties make everything easy on the eyes.
+
+### Keyboard Shortcuts
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+T` | New browser tab |
+| `Ctrl+W` | Close current browser tab |
+| `Ctrl+L` | Focus address bar |
+| `Ctrl+R` / `F5` | Reload page |
+| `Ctrl+H` | Go to home page (Origin start) |
+| `Ctrl+Left` / `Ctrl+[` | Back |
+| `Ctrl+Right` / `Ctrl+]` | Forward |
+| `Ctrl+Tab` | Next tab |
+| `Ctrl+Shift+Tab` | Previous tab |
+| `j` / `k` | Scroll down / up (Vim‑style) |
+| `Ctrl+d` / `Ctrl+u` | Scroll half‑page down / up |
+| `g` / `G` | Scroll to top / bottom |
+| `F11` | Toggle full screen |
+| `Ctrl+Shift+T` | Toggle integrated terminal |
+| `Ctrl+Alt+F` | Toggle title bar (frameless window) |
+| `Ctrl+Shift+B` | Toggle browser chrome (tabs + address bar) |
+| `Ctrl+Shift+Alt+F` | Full frameless (title bar + chrome off) |
+
+**Note:** Vim‑style scrolling is disabled inside text inputs and textareas.
+
+### Integrated Terminal (`Ctrl+Shift+T`)
+- **Multi‑tab terminal** – Create multiple shells (PowerShell, CMD, WSL, Git Bash).
+- **xterm.js‑based** – A real terminal emulator with full VT‑100 support, colors, and scrolling.
+- **Shortcuts inside the terminal:**
+  - `Ctrl+Shift+N` – New terminal tab
+  - `Ctrl+Shift+W` – Close terminal tab
+  - `Ctrl+Shift+K` – Clear terminal
+  - `Ctrl+Shift+R` – Restart current terminal tab
+  - `Ctrl++` / `Ctrl+-` / `Ctrl+0` – Increase, decrease, reset font size
+  - `Ctrl+Shift+F` – Search in terminal
+  - `F3` / `Shift+F3` – Next/previous search match
+- **Persistent profiles** – The list of open terminal tabs (but not their output) is restored across sessions.
+- **Drag‑to‑resize** – Drag the handle at the top of the terminal panel to resize it.
+
+### Frameless & Chrome Control
+You have full control over how the browser looks:
+
+- **Title bar only** (`Ctrl+Alt+F`) – Remove or restore the Windows title bar.
+- **Chrome visibility** (`Ctrl+Shift+B`) – Hide or show the custom browser UI (tabs, address bar, buttons) independently.
+- **Full frameless** (`Ctrl+Shift+Alt+F`) – Toggle both the title bar and the browser chrome with one shortcut.
+- When frameless and chrome‑hidden, you can still **drag the window** from the top strip and **resize** from the edges/corners.
+
+### Settings & Persistence
+- All preferences (home page URL, session restore, frameless state, chrome visibility, terminal profiles) are stored in `%LocalAppData%\OriginBrowser\settings.json`.
+- The settings file is human‑readable JSON. You can edit it by hand or through the future Settings UI.
+
+---
+
+## Architecture
+
+OriginBrowser/
+├── OriginBrowser.csproj # .NET 8 project file
+├── Program.cs # Application entry point
+├── BrowserForm.cs # Main form: tab management, shortcuts, chrome, terminal
+├── TerminalPanel.cs # Terminal panel with xterm.js integration
+├── OriginSettings.cs # JSON settings manager
+├── chrome-ui/ # Custom HTML/CSS/JS browser chrome
+│ ├── index.html
+│ ├── style.css
+│ └── app.js
+├── terminal-ui/ # Terminal frontend
+│ ├── terminal.html
+│ └── vendor/xterm/ # xterm.js library (offline)
+└── chrome-ui/ # Also contains icons, etc.
+
+
+- **WinForms** handles the window, tabs, and keyboard shortcuts.
+- **WebView2** renders both the custom browser chrome (tabs, address bar) and every web page.
+- **HTML/CSS/JS** powers the entire browser UI; you can customize it without touching C#.
+- **xterm.js** provides the terminal emulation inside a separate WebView2 panel.
+
+---
 
 ## Prerequisites
-- Windows 10 (1709+) or Windows 11
-- WebView2 Runtime (already included with Windows 11; Windows 10 users likely have it via Edge updates)
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+
+- **Windows 10** (build 1709 or later) or **Windows 11**  
+- **WebView2 Runtime** – preinstalled on Windows 11 and most up‑to‑date Windows 10 machines. If missing, download the [Evergreen Bootstrapper](https://developer.microsoft.com/en-us/microsoft-edge/webview2/).
+- **.NET 8 SDK** – [Download](https://dotnet.microsoft.com/download/dotnet/8.0) (Windows x64).
+
+---
 
 ## Build & Run (from source)
 
@@ -39,3 +120,44 @@ Built with **C# WinForms + Microsoft Edge WebView2**.
 cd OriginBrowser
 dotnet build
 dotnet run
+To create a standalone, self‑contained OriginBrowser.exe (no .NET runtime required by the user):
+
+bash
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish
+The publish folder (publish/) will contain OriginBrowser.exe and the chrome-ui/ and terminal-ui/ folders. Zip them together for distribution.
+
+Customization
+Change the home page – Edit OriginSettings.cs (default: https://origin.mozartt.workers.dev) or modify the HomePageUrl entry in settings.json.
+
+Modify the look – The browser chrome is just HTML/CSS/JS. Edit the files in chrome-ui/ to change colors, layout, or add new features.
+
+Add new shortcuts – All shortcuts are defined in BrowserForm.cs (in ProcessCmdKey) and in the injected page scripts. You can add your own combinations.
+
+Add a new terminal profile – Extend the TerminalPanel.cs shell‑detection logic and update terminal.html’s menu.
+
+Coming Soon (v1.12+)
+Omnibox autocomplete from history
+
+Download manager
+
+Bookmark bar
+
+Settings UI
+
+Tab drag‑to‑reorder
+
+License
+GNU GPL – feel free to use, modify, and share Origin however you like.
+
+Acknowledgements
+xterm.js – terminal emulation (MIT license)
+
+WebView2 – Microsoft Edge Chromium engine
+
+.NET – Microsoft’s open‑source development platform
+
+Codex / Kimi / Claude / Deepseek– AI coding assistants that helped build the terminal, shortcuts, and frameless mode
+
+Origin — The browser you own, not the one that owns you.
+
+This README covers every feature, shortcut, and architectural detail. You can drop it right into your repository root as `README.md`. It will present Origin as a mature, carefully crafted project to anyone who discovers it.

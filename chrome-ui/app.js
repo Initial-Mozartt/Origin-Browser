@@ -4,6 +4,7 @@ const btnBack = document.getElementById('btnBack');
 const btnForward = document.getElementById('btnForward');
 const btnReload = document.getElementById('btnReload');
 const btnHome = document.getElementById('btnHome');
+const btnTerminal = document.getElementById('btnTerminal');
 const btnNewTab = document.getElementById('btnNewTab');
 
 let currentState = { tabs: [], url: '' };
@@ -23,6 +24,9 @@ function init() {
     btnForward.addEventListener('click', () => post('goForward'));
     btnReload.addEventListener('click', () => post('reload'));
     btnHome.addEventListener('click', () => post('home'));
+    if (btnTerminal) {
+        btnTerminal.addEventListener('click', () => post('toggleTerminal'));
+    }
     btnNewTab.addEventListener('click', () => post('newTab'));
 
     // Address bar: Enter to navigate
@@ -47,17 +51,39 @@ function init() {
     }
     if (!e.ctrlKey) return;
     switch (e.key.toLowerCase()) {
-        case 't': e.preventDefault(); post('newTab'); break;
+        case 't':
+            e.preventDefault();
+            post(e.shiftKey ? 'toggleTerminal' : 'newTab');
+            break;
+        case 'f':
+            if (e.altKey) {
+                e.preventDefault();
+                post('toggleFrameless');
+            }
+            break;
+        case 'b':
+            if (e.shiftKey) {
+                e.preventDefault();
+                post('toggleChromeVisibility');
+            }
+            break;
         case 'w': e.preventDefault(); post('closeTab'); break;
         case 'l': e.preventDefault(); post('focusAddressBar'); break;
         case 'r': e.preventDefault(); post('reload'); break;
         case 'h': e.preventDefault(); post('home'); break;
+        case '`': e.preventDefault(); post('toggleTerminal'); break;
         case 'arrowleft': e.preventDefault(); post('goBack'); break;
         case 'arrowright': e.preventDefault(); post('goForward'); break;
         case '[': e.preventDefault(); post('goBack'); break;
         case ']': e.preventDefault(); post('goForward'); break;
     }
 });
+
+    document.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        if (e.target.closest('button, input, .tab, #addressBarWrapper')) return;
+        post('beginWindowDrag');
+    });
 }
 
 // Helper: send JSON message to C# backend

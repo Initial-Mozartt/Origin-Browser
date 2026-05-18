@@ -27,6 +27,7 @@ public class OriginSettings
     public string HomePageUrl { get; set; } = "https://origin.mozartt.workers.dev/";
     public string SearchEngineUrl { get; set; } = "https://www.google.com/search?q={0}";
     public bool FramelessWindow { get; set; } = false;
+    public bool ChromeVisible { get; set; } = true;
     public bool ShowBookmarkBar { get; set; } = false;
 
     // --- Singleton ---

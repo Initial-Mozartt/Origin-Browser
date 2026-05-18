@@ -1,20 +1,72 @@
-# Build output
-bin/
-obj/
-publish/
 publish v1/
 publish v1.1.0/
+publish v1.11.1/
 *.zip
+zip-files/
+publishs-via/
+build-output/
 
-# User data (cookies, history)
-OriginUserData/
-
-# IDE / editor
-.vs/
-.idea/
+# -----------------------------------------------------------------
+# .NET Build output
+# -----------------------------------------------------------------
+bin/
+obj/
 *.user
 *.suo
+*.userosscache
+*.sln.docstates
 
+# Publishing / single-file output
+publish/
+*.exe
+*.dll
+*.pdb
+
+# NuGet packages (if you ever use NuGet directly)
+**/packages/*
+
+# -----------------------------------------------------------------
+# Origin Browser – user data (contains personal browsing history,
+# cookies, session tabs, settings, and terminal profiles)
+# -----------------------------------------------------------------
+OriginUserData/
+
+# Also ignore the local settings file if it appears outside the
+# OriginUserData folder (safety net)
+*.settings.json
+
+# -----------------------------------------------------------------
+# IDE / Editor
+# -----------------------------------------------------------------
+.vs/
+.idea/
+*.swp
+*.swo
+*~
+
+# Visual Studio Code (if you ever open the project there)
+.vscode/
+
+# JetBrains Rider
+.idea/
+
+# -----------------------------------------------------------------
 # OS junk
+# -----------------------------------------------------------------
 Thumbs.db
 Desktop.ini
+.DS_Store
+
+# -----------------------------------------------------------------
+# Zip archives (so you never accidentally commit a release .zip)
+# -----------------------------------------------------------------
+*.zip
+*.7z
+*.rar
+
+# -----------------------------------------------------------------
+# Logs and temporary files
+# -----------------------------------------------------------------
+*.log
+*.tmp
+*.temp
