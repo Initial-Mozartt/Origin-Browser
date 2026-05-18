@@ -3,6 +3,8 @@ bin/
 obj/
 publish/
 publish v1/
+publish v1.1.0/
+*.zip
 
 # User data (cookies, history)
 OriginUserData/
