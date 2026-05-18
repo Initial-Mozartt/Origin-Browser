@@ -234,6 +234,12 @@ public partial class BrowserForm : Form
 
         var action = null;
         switch (e.key) {
+            case 'f': case 'F':
+                if (e.altKey) {
+                    if (e.shiftKey) action = 'fullFrameless';
+                    else action = 'toggleFrameless';
+                }
+                break;
             case 'Tab':
                 if (e.shiftKey) action = 'prevTab';
                 else action = 'nextTab';
@@ -321,6 +327,9 @@ public partial class BrowserForm : Form
 
             switch (type)
             {
+                case "fullFrameless":
+                    BeginInvoke(() => FullFramelessToggle());
+                    break;
                 case "nextTab":
                     BeginInvoke(() => { NextTab(); });
                     break;
@@ -609,6 +618,9 @@ public partial class BrowserForm : Form
 
             switch (type)
             {
+                case "fullFrameless":
+                    BeginInvoke(() => FullFramelessToggle());
+                    break;
                 case "nextTab":
                     BeginInvoke(() => { NextTab(); });
                     break;
@@ -657,7 +669,8 @@ public partial class BrowserForm : Form
                     FocusAddressBar();
                     break;
                 case "toggleTerminal":
-                    BeginInvoke(() => {
+                    BeginInvoke(() =>
+                    {
                         _terminalPanel.Toggle();
                         AdjustContentForTerminal();
                     });

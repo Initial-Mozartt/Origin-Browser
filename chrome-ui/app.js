@@ -37,47 +37,48 @@ function init() {
     });
     // Keyboard shortcuts when focus is inside the chrome UI (address bar, buttons, etc.)
     document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey) {
-        if (e.key === 'Tab' && !e.shiftKey) {
-            e.preventDefault();
-            post('nextTab');
-            return;
-        }
-        if (e.key === 'Tab' && e.shiftKey) {
-            e.preventDefault();
-            post('prevTab');
-            return;
-        }
-    }
-    if (!e.ctrlKey) return;
-    switch (e.key.toLowerCase()) {
-        case 't':
-            e.preventDefault();
-            post(e.shiftKey ? 'toggleTerminal' : 'newTab');
-            break;
-        case 'f':
-            if (e.altKey) {
+        if (e.ctrlKey) {
+            if (e.key === 'Tab' && !e.shiftKey) {
                 e.preventDefault();
-                post('toggleFrameless');
+                post('nextTab');
+                return;
             }
-            break;
-        case 'b':
-            if (e.shiftKey) {
+            if (e.key === 'Tab' && e.shiftKey) {
                 e.preventDefault();
-                post('toggleChromeVisibility');
+                post('prevTab');
+                return;
             }
-            break;
-        case 'w': e.preventDefault(); post('closeTab'); break;
-        case 'l': e.preventDefault(); post('focusAddressBar'); break;
-        case 'r': e.preventDefault(); post('reload'); break;
-        case 'h': e.preventDefault(); post('home'); break;
-        case '`': e.preventDefault(); post('toggleTerminal'); break;
-        case 'arrowleft': e.preventDefault(); post('goBack'); break;
-        case 'arrowright': e.preventDefault(); post('goForward'); break;
-        case '[': e.preventDefault(); post('goBack'); break;
-        case ']': e.preventDefault(); post('goForward'); break;
-    }
-});
+        }
+        if (!e.ctrlKey) return;
+        switch (e.key.toLowerCase()) {
+            case 't':
+                e.preventDefault();
+                post(e.shiftKey ? 'toggleTerminal' : 'newTab');
+                break;
+            case 'f': case 'F':
+                if (e.altKey) {
+                    if (e.shiftKey) post('fullFrameless');
+                    else post('toggleFrameless');
+                }
+                break;
+                break;
+            case 'b':
+                if (e.shiftKey) {
+                    e.preventDefault();
+                    post('toggleChromeVisibility');
+                }
+                break;
+            case 'w': e.preventDefault(); post('closeTab'); break;
+            case 'l': e.preventDefault(); post('focusAddressBar'); break;
+            case 'r': e.preventDefault(); post('reload'); break;
+            case 'h': e.preventDefault(); post('home'); break;
+            case '`': e.preventDefault(); post('toggleTerminal'); break;
+            case 'arrowleft': e.preventDefault(); post('goBack'); break;
+            case 'arrowright': e.preventDefault(); post('goForward'); break;
+            case '[': e.preventDefault(); post('goBack'); break;
+            case ']': e.preventDefault(); post('goForward'); break;
+        }
+    });
 
     document.addEventListener('mousedown', (e) => {
         if (e.button !== 0) return;
