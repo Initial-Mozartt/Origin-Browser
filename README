@@ -1,0 +1,51 @@
+OriginBrowser\
+├── OriginBrowser.csproj
+├── Program.cs
+├── BrowserForm.cs
+├── BrowserForm.Designer.cs   (not needed – Kimi didn't provide it, but WinForms works without a designer file if you create controls programmatically; the code does that)
+└── chrome-ui\
+    ├── index.html
+    ├── style.css
+    └── app.js
+
+OriginBrowser/
+├── OriginBrowser.csproj   # Project file
+├── Program.cs             # Entry point
+├── BrowserForm.cs         # Main form, tab manager, WebView2 host
+└── chrome-ui/
+    ├── index.html         # Browser chrome markup
+    ├── style.css          # Dark theme styles
+    └── app.js             # Chrome UI logic + C# bridge
+
+# Origin Browser
+
+A minimal, robust desktop web browser for Windows 10/11.  
+Built with **C# WinForms + Microsoft Edge WebView2**.
+
+## Why this stack?
+- **No Rust/Node.js toolchain** – just the .NET 8 SDK.
+- **Native WebView2** rendering (Chromium-based, preinstalled on Win11).
+- **HTML/CSS/JS chrome UI** – customize the tabs and toolbar with web tech.
+- **Small self-contained EXE** – ~35–45 MB single-file publish.
+- **Real multi-tab architecture** – each tab is an isolated WebView2 instance.
+
+## Features
+- Multi-tab browsing (Ctrl+T new, Ctrl+W close, middle-click to close)
+- Address bar with focus shortcut (Ctrl+L)
+- Back / Forward / Reload / Home buttons
+- Vim-style page scrolling: `j` / `k` (line), `Ctrl+d` / `Ctrl+u` (half-page), `g` / `G` (top/bottom)
+- Navigation shortcuts: Ctrl+[/] or Ctrl+Left/Right
+- Fullscreen toggle (F11)
+- Dark theme across UI and tabs
+
+## Prerequisites
+- Windows 10 (1709+) or Windows 11
+- WebView2 Runtime (already included with Windows 11; Windows 10 users likely have it via Edge updates)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+
+## Build & Run (from source)
+
+```bash
+cd OriginBrowser
+dotnet build
+dotnet run

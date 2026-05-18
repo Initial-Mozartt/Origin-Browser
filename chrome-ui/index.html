@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Origin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="chrome">
+        <!-- Tab strip -->
+        <div id="tabs-bar"></div>
+
+        <!-- Toolbar: nav buttons + address bar -->
+        <div id="toolbar">
+            <button id="btnBack" title="Back (Ctrl+Left or Ctrl+[)">&#9664;</button>
+            <button id="btnForward" title="Forward (Ctrl+Right or Ctrl+])">&#9654;</button>
+            <button id="btnReload" title="Reload (Ctrl+R)">&#8635;</button>
+            <button id="btnHome" title="Home (Ctrl+H)">&#8962;</button>
+
+            <div id="addressBarWrapper">
+                <span id="addressIcon">🔍</span>
+                <input type="text" id="addressBar" placeholder="Search Google or type a URL" autocomplete="off" />
+            </div>
+
+            <button id="btnNewTab" title="New Tab (Ctrl+T)">+</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

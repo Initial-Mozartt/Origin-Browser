@@ -1,0 +1,182 @@
+:root {
+    --bg: #1e1e1e;
+    --bg-light: #2d2d2d;
+    --bg-lighter: #3a3a3a;
+    --bg-input: #252525;
+    --border: #444;
+    --text: #ffffff;
+    --text-muted: #aaa;
+    --accent: #0a84ff;
+    --radius: 6px;
+    --toolbar-height: 34px;
+    --font-size: 13px;
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-family);
+    background: var(--bg);
+    color: var(--text);
+    user-select: none;
+}
+
+#chrome {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 4px 8px;
+    gap: 4px;
+}
+
+/* ---------- Tabs ---------- */
+#tabs-bar {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    align-items: flex-end;
+}
+#tabs-bar::-webkit-scrollbar { display: none; }
+
+.tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    background: var(--bg-light);
+    border-radius: var(--radius) var(--radius) 0 0;
+    font-size: 12px;
+    min-width: 100px;
+    max-width: 200px;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+    position: relative;
+    height: 30px;
+}
+
+.tab:hover { background: var(--bg-lighter); }
+.tab.active { background: #4a4a4a; box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.3); }
+
+.tab-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tab-close {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+}
+
+.tab-close:hover {
+    background: #ff5f57;
+    color: #fff;
+}
+
+.tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 1px;
+}
+
+/* ---------- Toolbar ---------- */
+#toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: var(--toolbar-height);
+}
+
+button {
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--radius);
+    padding: 0 12px;
+    height: 30px;
+    cursor: pointer;
+    font-size: var(--font-size);
+    transition: background 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+button:hover {
+    background: var(--bg-lighter);
+    border-color: #555;
+}
+
+button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+#addressBarWrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+#addressIcon {
+    position: absolute;
+    left: 12px;
+    font-size: 13px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.6;
+}
+
+#addressBar {
+    flex: 1;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: #fff;
+    border-radius: 16px;
+    padding: 6px 14px 6px 32px;
+    font-size: 13px;
+    outline: none;
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+#addressBar:focus {
+    background: #252525;
+    border-color: #0a84ff;
+    box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+}
+
+#btnNewTab {
+    font-weight: bold;
+    font-size: 16px;
+    padding: 0 10px;
+    width: 30px;
+    height: 30px;
+}
