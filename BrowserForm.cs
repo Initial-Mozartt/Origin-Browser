@@ -111,7 +111,18 @@ public partial class BrowserForm : Form
             _chromeWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
             _chromeWebView.CoreWebView2.Settings.AreDevToolsEnabled = false;
 
-            AddNewTab("https://origin.mozartt.workers.dev/");
+            var settings = OriginSettings.Instance;
+            if (settings.RestoreLastSession && settings.LastSessionTabs.Count > 0)
+            {
+                foreach (var tab in settings.LastSessionTabs)
+                {
+                    AddNewTab(tab.Url);
+                }
+            }
+            else
+            {
+                AddNewTab(settings.HomePageUrl);
+            }
         }
         catch (Exception ex)
         {
@@ -263,6 +274,16 @@ public partial class BrowserForm : Form
         webView.CoreWebView2.DocumentTitleChanged += (s, e) =>
         {
             Invoke(() => _ = UpdateChromeUIAsync());
+        };
+
+        webView.CoreWebView2.NavigationCompleted += (s, e) =>
+        {
+            if (e.IsSuccess && webView.CoreWebView2.Source.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                var url = webView.CoreWebView2.Source;
+                var title = webView.CoreWebView2.DocumentTitle ?? string.Empty;
+                OriginSettings.Instance.AddHistoryEntry(url, title);
+            }
         };
 
         _tabWebViews[tabId] = webView;
@@ -633,6 +654,18 @@ public partial class BrowserForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
+        var sessionTabs = _tabOrder
+            .Select(id => _tabWebViews.TryGetValue(id, out var wv) ? wv : null)
+            .Where(wv => wv?.CoreWebView2 != null)
+            .Select(wv => new TabSession
+            {
+                Url = wv!.CoreWebView2.Source,
+                Title = wv.CoreWebView2.DocumentTitle ?? string.Empty
+            })
+            .ToList();
+
+        OriginSettings.Instance.RecordSession(sessionTabs);
+
         foreach (var kvp in _tabWebViews.ToList())
         {
             try { kvp.Value.Dispose(); } catch { }
