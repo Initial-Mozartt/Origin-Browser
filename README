@@ -1,13 +1,3 @@
-OriginBrowser\
-├── OriginBrowser.csproj
-├── Program.cs
-├── BrowserForm.cs
-├── BrowserForm.Designer.cs   (not needed – Kimi didn't provide it, but WinForms works without a designer file if you create controls programmatically; the code does that)
-└── chrome-ui\
-    ├── index.html
-    ├── style.css
-    └── app.js
-
 OriginBrowser/
 ├── OriginBrowser.csproj   # Project file
 ├── Program.cs             # Entry point

@@ -1,18 +1,16 @@
-# Build results
+# Build output
 bin/
 obj/
-*.user
-*.suo
+publish/
 
-# User data (browsing history, cookies, etc.)
+# User data (cookies, history)
 OriginUserData/
 
-# VS / Rider settings
+# IDE / editor
 .vs/
 .idea/
-
-# NuGet packages
-packages/
+*.user
+*.suo
 
 # OS junk
 Thumbs.db
