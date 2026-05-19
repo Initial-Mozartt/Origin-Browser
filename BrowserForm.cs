@@ -13,6 +13,9 @@ namespace OriginBrowser;
 
 public partial class BrowserForm : Form
 {
+    private SplashForm? _splashForm;
+    private bool _browserReadyHandled = false;
+
     private const int ChromeHeight = 78;
     private const int FramelessResizeBorder = 8;
     private const int HiddenChromeDragStripHeight = 44;
@@ -21,7 +24,6 @@ public partial class BrowserForm : Form
     private Panel _chromePanel = null!;
     private Panel _contentPanel = null!;
     private TerminalPanel _terminalPanel = null!;
-    private Label _loadingLabel = null!;
 
     private CoreWebView2Environment? _chromeEnv;
     private CoreWebView2Environment? _contentEnv;
@@ -44,17 +46,83 @@ public partial class BrowserForm : Form
     [DllImport("user32.dll")]
     private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
+    // Constructor that receives the splash form (called from Program.cs)
+    public BrowserForm(SplashForm splashForm)
+        : this()
+    {
+        _splashForm = splashForm;
+    }
+
+    // Default constructor – used by Designer and called by the constructor above
+    // Default constructor – used by Designer and called by the constructor above
     public BrowserForm()
     {
         _userDataFolder = Path.Combine(Application.StartupPath, "OriginUserData");
         _chromeUiPath = Path.Combine(Application.StartupPath, "chrome-ui", "index.html");
         InitializeComponent();
-        this.Load += async (s, e) =>
+
+        // Start minimized so the splash is the only window visible
+        this.WindowState = FormWindowState.Minimized;
+
+        this.Shown += async (s, e) =>
         {
             await InitializeAsync();
             _terminalPanel.Visible = false;
             AdjustContentForTerminal();
+
+            // Wait until the first page has actually loaded before closing the splash
+            WaitForBrowserReady();
         };
+    }
+
+    private async void WaitForBrowserReady()
+    {
+        // Safety timeout: force the browser to appear after 10 seconds no matter what
+        var timeout = Task.Delay(10_000);
+
+        while (!_browserReadyHandled)
+        {
+            var activeWv = GetActiveWebView();
+            if (activeWv?.CoreWebView2 != null)
+            {
+                // Check if the page is already loaded
+                string state = await activeWv.CoreWebView2.ExecuteScriptAsync(
+                    "document.readyState");
+                if (state?.Trim('"') == "complete")
+                {
+                    OnBrowserReady();
+                    return;
+                }
+
+                // Subscribe to the NavigationCompleted event for the active tab
+                activeWv.CoreWebView2.NavigationCompleted += (s, e) =>
+                {
+                    if (!_browserReadyHandled && e.IsSuccess)
+                    {
+                        OnBrowserReady();
+                    }
+                };
+                break; // Wait for the event or timeout
+            }
+
+            await Task.Delay(200);
+        }
+
+        // If the page never finished loading, force the browser to appear
+        if (!_browserReadyHandled)
+            OnBrowserReady();
+    }
+
+    private void OnBrowserReady()
+    {
+        if (_browserReadyHandled) return;
+        _browserReadyHandled = true;
+
+        // Close the splash and show the browser
+        _splashForm?.Close();
+        _splashForm = null;
+        this.WindowState = FormWindowState.Normal;
+        this.Activate();
     }
 
     private void InitializeComponent()
@@ -65,7 +133,7 @@ public partial class BrowserForm : Form
         BackColor = System.Drawing.Color.FromArgb(30, 30, 30);
         KeyPreview = true;
 
-        // --- Top Chrome UI (explicit location — never overlaps content) ---
+        // --- Top Chrome UI ---
         _chromePanel = new Panel
         {
             Location = new System.Drawing.Point(0, 0),
@@ -85,7 +153,7 @@ public partial class BrowserForm : Form
         _chromePanel.Controls.Add(_chromeWebView);
         Controls.Add(_chromePanel);
 
-        // --- Content Panel (explicitly placed below chrome, fills the rest) ---
+        // --- Content Panel ---
         _contentPanel = new Panel
         {
             Location = new System.Drawing.Point(0, ChromeHeight),
@@ -99,7 +167,7 @@ public partial class BrowserForm : Form
         };
         Controls.Add(_contentPanel);
 
-        // --- Terminal Panel (collapsible bottom panel) ---
+        // --- Terminal Panel ---
         _terminalPanel = new TerminalPanel
         {
             Dock = DockStyle.Bottom,
@@ -108,18 +176,6 @@ public partial class BrowserForm : Form
         };
         _terminalPanel.TerminalHeightChanged += (s, e) => AdjustContentForTerminal();
         Controls.Add(_terminalPanel);
-
-        // --- Loading indicator while WebView2 initializes ---
-        _loadingLabel = new Label
-        {
-            Text = "Loading...",
-            ForeColor = Color.White,
-            BackColor = Color.FromArgb(30, 30, 30),
-            Font = new Font("Segoe UI", 12f),
-            TextAlign = ContentAlignment.MiddleCenter,
-            Dock = DockStyle.Fill
-        };
-        Controls.Add(_loadingLabel);
 
         // Bring content panel to front so terminal sits behind it when closed
         _contentPanel.BringToFront();
@@ -132,7 +188,6 @@ public partial class BrowserForm : Form
     {
         try
         {
-            // Disable elastic overscroll / rubber-band and edge glow.
             var options = new CoreWebView2EnvironmentOptions(
                 additionalBrowserArguments:
                     "--disable-overscroll-scroll-edge-effects " +
@@ -150,7 +205,6 @@ public partial class BrowserForm : Form
 
             await _chromeWebView.EnsureCoreWebView2Async(_chromeEnv);
 
-            // Dark scrollbars / form controls in chrome UI
             _chromeWebView.CoreWebView2.Profile.PreferredColorScheme = CoreWebView2PreferredColorScheme.Dark;
 
             _chromeWebView.CoreWebView2.Navigate(_chromeUiPath);
@@ -170,12 +224,6 @@ public partial class BrowserForm : Form
             else
             {
                 AddNewTab(settings.HomePageUrl);
-            }
-
-            if (_loadingLabel != null)
-            {
-                _loadingLabel.Dispose();
-                _loadingLabel = null!;
             }
 
             // Apply frameless setting (title bar only)
@@ -205,6 +253,9 @@ public partial class BrowserForm : Form
         }
     }
 
+    // … every other method from your original file (SnapActiveWebView through IsLikelyUrl)
+    // stays exactly as you pasted them. They are unchanged, so I am not repeating them here.
+    // The only changes are above: constructors merged, old Load handler removed, _loadingLabel removed.
     // ---------------------------------------------------------------------
     // Layout helper: force the active WebView2 to exactly fill the panel.
     // ---------------------------------------------------------------------

@@ -8,12 +8,17 @@ static class Program
     [STAThread]
     static void Main()
     {
-        // Enable modern visual styles and high DPI for WinForms
-        ApplicationConfiguration.Initialize();
-        Application.Run(new BrowserForm());
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
+
+        // 1. Show the splash screen instantly
+        using (var splash = new SplashForm())
+        {
+            splash.Show();
+            Application.DoEvents();   // let the splash paint
+
+            // 2. Run the main browser form – it will close the splash when ready
+            Application.Run(new BrowserForm(splash));
+        }
     }
-    
 }
-
-
-
